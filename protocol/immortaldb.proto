@@ -1,0 +1,39 @@
+package immortaldb;
+
+import "google/protobuf/descriptor.proto";
+import "dbproxy.proto";
+
+message Item {
+	required uint32 id = 1;
+}
+
+message ItemList {
+	repeated Item items = 1;
+}
+
+// 用户角色对象示例
+message Player {
+	// 角色属性
+	// 每一个属性对应mysql表中的一个字段
+	// 字段名必须跟当前message的成员名一致
+	// 类型也必须一致
+	required string account = 1 [(dbproto.mysql_create_option) = "VARCHAR(64) NOT NULL"];
+	required string name = 2 [(dbproto.mysql_create_option) = "VARCHAR(64) NOT NULL"];
+	required uint32 level = 3 [(dbproto.mysql_create_option) = "INT NOT NULL"];
+	required uint32 exp = 4 [(dbproto.mysql_create_option) = "INT NOT NULL"];
+	// bytes 对应mysql blob
+	optional bytes extend = 5 [(dbproto.mysql_create_option) = "BLOB"];
+	// 自定义对象 对应mysql blob
+	optional ItemList itemlist = 6 [(dbproto.mysql_create_option) = "BLOB"];
+	required uint64 roleid = 7 [(dbproto.mysql_create_option) = "BIGINT NOT NULL PRIMARY KEY UNIQUE"];
+	// 限制:
+	// 启用ORM的Message对象不能直接使用
+	// Protobuf的repeated类型, 因为MySQL
+	// 没有合适的类型直接对应.
+	// 变通的办法是将repeated类型放到非ORM自定义类型中
+	// 这样将会序列化到MySQL的blob类型.
+	// 参考ItemList的用法.
+
+	option (dbproto.indexfield) = "roleid";
+	option (dbproto.orm) = true;
+}

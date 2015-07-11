@@ -1,0 +1,53 @@
+package onlinedb;
+import "google/protobuf/descriptor.proto";
+import "dbproxy.proto";
+
+message AccountTable {
+	required string name = 1 [(dbproto.mysql_create_option) = "VARCHAR(64) PRIMARY KEY"];
+	required bytes value = 2 [(dbproto.mysql_create_option) = "BLOB"];
+	option (dbproto.orm) = true;
+	option (dbproto.indexfield) = "name";
+}
+
+message RoleInfo {
+	// 角色/玩家名字
+	required string name = 1;
+	// user unique id
+	optional uint64 id = 2 [default = 0];
+	// 创建时间
+	required uint64 createtime = 3;
+	// 所在服ID
+	required uint32 sid = 4;
+	// 区ID
+	required uint32 aid = 5;
+	// 最近一次登录时间
+	optional uint64 logintime = 6 [default = 0];
+	// 是否登录
+	optional bool islogin = 7 [default = false];
+	// 最近一次登录所在的GSID
+	optional uint64 gid = 8 [default = 0];
+	// 校验用token
+	optional bytes token = 9;
+	// 扩展数据, 玩家注册时由客户端赋值,
+	// 用于记录业务相关数据, 比如角色职业, 性别等.
+	optional bytes extend = 10;
+}
+
+message AccountInfo {
+	// 账户
+	required string account = 1;
+	// 创建时间
+	required uint64 regtime = 2;
+	// Role
+	repeated RoleInfo roles = 3;
+}
+
+message NameTable {
+	// UserID
+	optional uint64 id = 1 [(dbproto.mysql_create_option) = "BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT"];
+	// Name
+	required string name = 2 [(dbproto.mysql_create_option) = "VARCHAR(64) NOT NULL"];
+	option (dbproto.mysql_create_table_option) = "INDEX (name)";
+	option (dbproto.orm) = true;
+	option (dbproto.indexfield) = "id";
+}

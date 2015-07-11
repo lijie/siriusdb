@@ -1,0 +1,134 @@
+package dbproto;
+
+import "google/protobuf/descriptor.proto";
+
+enum command {
+  CMD_SET_REQ = 107;
+  CMD_SET_RSP = 108;
+  CMD_GET_REQ = 109;
+  CMD_GET_RSP = 110;
+  CMD_DEL_REQ = 111;
+  CMD_DEL_RSP = 112;
+
+  CMD_RAWSQL_REQ = 113;
+  CMD_RAWSQL_RSP = 114;
+  CMD_RAWREDIS_REQ = 115;
+  CMD_RAWREDIS_RSP = 116;
+
+  CMD_SELECTDB_REQ = 117;
+  CMD_SELECTDB_RSP = 118;
+
+  // only do insert
+  CMD_SETNX_REQ = 119;
+  CMD_SETNX_RSP = 120;
+
+  // select db for current connection
+  CMD_USEDB_REQ = 121;
+  CMD_USEDB_RSP = 122;
+};
+
+enum errcode {
+  ERR_RWCACHE = 10101;
+  ERR_RWDB = 10102;
+  ERR_UNPACK = 10103;
+  ERR_SAMEACCOUNT = 10104;
+  ERR_CORRUPTION = 10105;
+  ERR_NODATA = 10106;
+  ERR_GSERR = 10107;
+  ERR_TIMEOUT = 10108;
+  ERR_DICONNECT = 10109;
+  ERR_UNKNOWNDB = 10110;
+  ERR_EMPTYDB = 10111;
+  ERR_UNKNOWMSG = 10112;
+};
+
+enum flags {
+     FLAG_DB_ONLY = 1;
+     FLAG_CACHE_ONLY = 2;
+     FLAG_SET_ONLY = 4;
+     FLAG_MULTI_GET = 8;
+     FLAG_LAST_ID = 16;
+};
+
+//
+// lijie3:
+// DBProxy使用Protobuf实现简单的ORM映射
+// 直接将一个Protobuf对象映射到关系型数据库的一条记录
+//
+extend google.protobuf.FieldOptions {
+       optional bool index = 52234;
+       optional bool index_unique = 52235;
+       optional string mysql_create_option = 52236;
+}
+
+extend google.protobuf.MessageOptions {
+       // 当前message是否开启orm功能
+       optional bool orm = 51236;
+       // Get时所使用的索引字段名
+       // 该字段同时为作为redis的key
+       // 数据库分表时, 也使用该字段计算hash值
+       optional string indexfield = 51237;
+       optional string mysql_create_table_option = 51238;
+}
+
+// Commands
+message Get {
+	required string msg_type = 1;
+	required string key = 2;
+	optional uint32 flags = 3 [default = 0];
+}
+
+message GetResult {
+	repeated bytes data = 1;
+}
+
+message Set {
+	required string msg_type = 1;
+	required string key = 2;
+	required bytes value = 3;
+	optional uint32 flags = 4 [default = 0];
+}
+
+message SetResult {
+	optional uint64 last_insert_id = 1 [default = 0];
+	option (dbproto.orm) = true;
+}
+
+message Del {
+	required string msg_type = 1;
+	required string key = 2;
+	optional uint32 flags = 3 [default = 0];
+}
+
+message RawSQL {
+	required string msg_type = 1;
+	required bytes sql = 2;
+	optional uint32 flags = 3 [default = 0];
+}
+
+message RawSQLResult {
+	repeated bytes values = 1;
+}
+
+message RawRedis {
+	required string msg_type = 1;
+	required bytes command = 2;
+	optional uint32 flags = 3 [default = 0];
+}
+
+message RawRedisResult {
+	repeated bytes values = 1;
+}
+
+message UseDB {
+	required string dbname = 1;
+}
+
+// Internal use
+message FlushItem {
+	required string key = 1;
+	required string msg_type = 2;
+	required uint64 time = 3;
+	required uint32 cmd = 4;
+	required string dbname = 5;
+}
